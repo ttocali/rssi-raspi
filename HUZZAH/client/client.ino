@@ -1,45 +1,50 @@
 /*
- This example  prints the Wifi shield's MAC address, and
- scans for available Wifi networks using the Wifi shield.
- Every ten seconds, it scans again. It doesn't actually
- connect to any network, so no encryption scheme is specified.
+Client Code for Huzzah Breakout Board.
 
- Circuit:
- * WiFi shield attached
+The Huzzah scans and stores information about the networks around it. It'll then send 
+a 34 byte array to the server. This array includes the IP address and the top 3 
+routers' BSSIDs and their corresponding RSSIs. The array will be in the below form:
 
- created 13 July 2010
- by dlf (Metodo2 srl)
- modified 21 Junn 2012
- by Tom Igoe and Jaymes Dec
+[  4 bytes  |  6 bytes  |  4 bytes  |  6 bytes  |  4 bytes  |  6 bytes  |  4 bytes  ]
+[  IP addr  |  BSSID 0  |  RSSI 0   |  BSSID 1  |  RSSI 1   |  BSSID 2  |  RSSI 2   ]
+
+Author: Christine Hwang
+Project: On-Campus Lost & Found
+Date: May 18, 2016
+References: Tom Igoe and Jaymes Dec's ScanNetworks Example, Arduino Wi-Fi Library
  */
-
 
 #include <SPI.h>
 #include <ESP8266WiFi.h>
 
+// Global Variables
 String ssid;
 uint8_t encryptionType;
 int32_t RSSI;
 uint8_t* bssid;
 uint8_t topBSSID[3][6];
-uint8_t sentBSSID[3][6];
 int32_t topRSSI[3];
 byte clientArray[34];
 int bssidFlag = 0;
 int32_t channel;
 bool isHidden;
-IPAddress ip;                    // the IP address of your shield
+IPAddress ip;
 
-const char* ssidMain = "Arceus";//"RedRover";
-const char* password = "charmandersailormars";
+// Main Network Name and Password
+const char* ssidMain = "RedRover";
+const char* password = "";
 
+// Server hostname and Port
 const char* host = "google.com";//"10.148.1.96";
 WiFiClient client;
 const int httpPort = 80;//10002;
 
+/*
+ * Setup the LED, connect to Wi-Fi, and get the IP address
+ */
 void setup() {
 
-  //Setup Light for Troubleshooting Battery Life
+  //Setup LED for troubleshooting battery life
   pinMode(0, OUTPUT);
   
   //Initialize serial and wait for port to open:
@@ -58,8 +63,9 @@ void setup() {
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssidMain);
-  
-  WiFi.begin(ssidMain,password);
+
+  // Change this line depending if there is a password or not
+  WiFi.begin(ssidMain);//,password);
   
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
@@ -88,8 +94,11 @@ void setup() {
   printMacAddress();
 }
 
+/*
+ * Scan networks and send the clientArray every 30 seconds
+ */
 void loop() {
-  // Blink light for troubleshooting
+  // Blink LED for troubleshooting battery life
   digitalWrite(0, HIGH);
   delay(15000);
   digitalWrite(0, LOW);
@@ -100,6 +109,9 @@ void loop() {
   delay(15000);
 }
 
+/*
+ * Prints MacAddress of Huzzah
+ */
 void printMacAddress() {
   // the MAC address of your Wifi shield
   byte mac[6];
@@ -120,7 +132,10 @@ void printMacAddress() {
   Serial.println(mac[0], HEX);
 }
 
-void listNetworks() {
+/*
+ * Prints out a list of networks and their corresponding information
+ */
+void listNetworks() {  
   // scan for nearby networks:
   Serial.println("** Scan Networks **");
   int numSsid = WiFi.scanNetworks();
@@ -129,17 +144,13 @@ void listNetworks() {
     Serial.println("Couldn't get a wifi connection");
     while (true);
   }
-  
-  int32_t arrayRSSI[numSsid];
-  for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-    arrayRSSI[thisNet] = 0;
-  }
 
+  // Make temporary arrays and variables
+  int32_t arrayRSSI[numSsid];
   uint8_t* arrayBSSID[numSsid];
-  int i,j;    // Used for sorting
+  int i,j;                        // Used for sorting
   int32_t tmpRSSI;
   uint8_t* tmpBSSID;
-
 
   // print the list of networks seen:
   Serial.print("number of available networks:");
@@ -153,27 +164,13 @@ void listNetworks() {
     arrayRSSI[thisNet] = RSSI;
     arrayBSSID[thisNet] = bssid;
     Serial.println(String("SSID : ") + ssid);
-    Serial.println(String("encryptionType : ") + encryptionType);
-    Serial.print("BSSID: ");
-    Serial.print(bssid[5],HEX);
-    Serial.print(":");
-    Serial.print(bssid[4],HEX);
-    Serial.print(":");
-    Serial.print(bssid[3],HEX);
-    Serial.print(":");
-    Serial.print(bssid[2],HEX);
-    Serial.print(":");
-    Serial.print(bssid[1],HEX);
-    Serial.print(":");
-    Serial.println(bssid[0],HEX);
+    printBSSID(99, bssid);
     Serial.println(String("RSSI : ") + RSSI);
-//    Serial.println(String("Channel : ") + channel);
-//    Serial.println(String("Hidden : ") + isHidden); 
   }
 
-  // Sort the Array for the top 3 BSSID; insertion sort
+  // Sort the Array for the top 3 routers' BSSID using insertion sort
+  // Do this one time only
   if (!bssidFlag){
-    Serial.println("enter once only");
     for (i = 1; i < numSsid; i++){
       j = i;
       while (j > 0 && arrayRSSI[j-1] < arrayRSSI[j]){
@@ -188,51 +185,36 @@ void listNetworks() {
     }
 
     memcpy(topBSSID[0], arrayBSSID[0], 6);
-    printBSSID(0, topBSSID[0]);
-    swapBSSID(0, arrayBSSID[0]);
-    printBSSID(0, sentBSSID[0]);
     memcpy(topBSSID[1], arrayBSSID[1], 6);
-    printBSSID(1, topBSSID[1]);
-    swapBSSID(1, arrayBSSID[1]);
-    printBSSID(1, sentBSSID[1]);
     memcpy(topBSSID[2], arrayBSSID[2], 6);
-    printBSSID(2, topBSSID[2]);
-    swapBSSID(2, arrayBSSID[2]);
-    printBSSID(2, sentBSSID[2]);
     
     bssidFlag += 1;
   }
 
-  // Find the top 3 BSSID's RSSI
+  // Find the top 3 BSSIDs' corresponding RSSI
   for (i = 0; i < numSsid; i++){
     if (memcmp(arrayBSSID[i], topBSSID[0], 6) == 0){
-      Serial.println("Found Match 0");
       topRSSI[0] = arrayRSSI[i];
     }
     else if (memcmp(arrayBSSID[i], topBSSID[1], 6) == 0){
-      Serial.println("Found Match 1");
       topRSSI[1] = arrayRSSI[i];      
     }
     else if (memcmp(arrayBSSID[i], topBSSID[2], 6) == 0) {
-      Serial.println("Found Match 2");
       topRSSI[2] = arrayRSSI[i];
     }
   }
-
-//  printBSSID(0, topBSSID[0]);
-//  printBSSID(1, topBSSID[1]);
-//  printBSSID(2, topBSSID[2]);
   
-  Serial.println("RSSI Array:");
-  for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-    Serial.print(thisNet + String("->"));
-    Serial.println(arrayRSSI[thisNet]);
-  }
+//  Serial.println("RSSI Array:");
+//  for (int thisNet = 0; thisNet < numSsid; thisNet++) {
+//    Serial.print(thisNet + String("->"));
+//    Serial.println(arrayRSSI[thisNet]);
+//  }
 
 
   // Make the client array
   updateClientArray();
   
+  // Print for debugging purposes
   printClientArray();
   
   // Send the client array byte by byte
@@ -242,16 +224,10 @@ void listNetworks() {
 //  } 
 }
 
-void swapBSSID(int i, uint8_t* oldBSSID){
-  uint8_t flipBSSID[6];
-
-  for(int j=0; j<6; j++){
-    flipBSSID[j] = oldBSSID[5-j];
-  }
-
-  memcpy(sentBSSID[i], flipBSSID, 6);
-}
-
+/*
+ * Prints the BSSID onto the Serial Monitor;
+ * Used for debugging purposes
+ */
 void printBSSID(int i, uint8_t* bssid){
     Serial.print("BSSID");
     Serial.print(i,DEC);
@@ -270,6 +246,10 @@ void printBSSID(int i, uint8_t* bssid){
     Serial.println(" "); 
 }
 
+/*
+ * Prints the Client Array;
+ * Used for debugging purposes
+ */
 void printClientArray(){
   int32_t tmpRSSI;
   
@@ -315,9 +295,12 @@ void printClientArray(){
   Serial.println(" ");
 }
 
+/*
+ * Updates the Client Array with the BSSIDs and their RSSIs
+ */
 void updateClientArray(){
   // Update BSSID 0
-  memcpy(clientArray+4, sentBSSID[0], 6);
+  memcpy(clientArray+4, topBSSID[0], 6);
 
   // Update BSSID 0's RSSI
   clientArray[10] = (topRSSI[0] >> 24) & 0xFF;
@@ -326,7 +309,7 @@ void updateClientArray(){
   clientArray[13] = topRSSI[0] & 0xFF;
 
   // Update BSSID 1
-  memcpy(clientArray+14, sentBSSID[1], 6);
+  memcpy(clientArray+14, topBSSID[1], 6);
 
   // Update BSSID 1's RSSI
   clientArray[20] = (topRSSI[1] >> 24) & 0xFF;
@@ -335,34 +318,12 @@ void updateClientArray(){
   clientArray[23] = topRSSI[1] & 0xFF;
 
   // Update BSSID 2
-  memcpy(clientArray+24, sentBSSID[2], 6);
+  memcpy(clientArray+24, topBSSID[2], 6);
 
   // Update BSSID 2's RSSI
   clientArray[30] = (topRSSI[2] >> 24) & 0xFF;
   clientArray[31] = (topRSSI[2] >> 16) & 0xFF;
   clientArray[32] = (topRSSI[2] >> 8) & 0xFF;
-  clientArray[33] = topRSSI[2] & 0xFF;
-  
-}
-
-void printEncryptionType(int thisType) {
-  // read the encryption type and print out the name:
-  switch (thisType) {
-    case ENC_TYPE_WEP:
-      Serial.println("WEP");
-      break;
-    case ENC_TYPE_TKIP:
-      Serial.println("WPA");
-      break;
-    case ENC_TYPE_CCMP:
-      Serial.println("WPA2");
-      break;
-    case ENC_TYPE_NONE:
-      Serial.println("None");
-      break;
-    case ENC_TYPE_AUTO:
-      Serial.println("Auto");
-      break;
-  }
+  clientArray[33] = topRSSI[2] & 0xFF; 
 }
 
