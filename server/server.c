@@ -8,7 +8,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 
-#define PORT 10000
+#define PORT 10102
 
 void error(const char *msg)
 {
@@ -23,6 +23,7 @@ int main(int argc, char *argv[])
      char buffer[256];
      struct sockaddr_in serv_addr, cli_addr;
      int n;
+     FILE *fifo;
 
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -50,15 +51,25 @@ int main(int argc, char *argv[])
           error("ERROR on accept");
 
      bzero(buffer,256);
-     n = read(newsockfd,buffer,255);
+     while (1) {
+       memset(buffer, 0, 256);
+       n = read(newsockfd,buffer,255);
 
-     if (n < 0) error("ERROR reading from socket");
+       if (n < 0) {
+         error("ERROR reading from socket");
+         close(newsockfd);
+         close(sockfd);
+       }
 
-     printf("Here is the message: %s\n",buffer);
-     n = write(newsockfd,"I got your message",18);
+       fifo = fopen("/home/pi/rssi-raspi/rssi", "a");
 
-     if (n < 0) error("ERROR writing to socket");
+       printf("Here is the message: %s\n",buffer);
+       fprintf(fifo, "%s", buffer);
+       fclose(fifo);
 
+       //n = write(newsockfd,"I got your message",18);
+       //if (n < 0) error("ERROR writing to socket");
+     }
      close(newsockfd);
      close(sockfd);
      return 0;
