@@ -51,6 +51,7 @@ def main():
     elif (counter % 10 < 4):
       rssi[index] = (rssi[index] << 8) | int(line)
       rssi[index] = int32(rssi[index])
+
       if (counter == 33):
         print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))
         for i in range(3):
