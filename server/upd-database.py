@@ -12,41 +12,45 @@
 import sqlite3
 import os
 
-def add_to_db( c, bssid, rssi, location ):
-  c.execute("INSERT INTO fingerprints VALUES (?)", (bssid, rssi, location))
+def formatquotes(text):
+ return '"' + str(text) + '"'
 
-def get_prints( c ):
-  return c.execute("SELECT * FROM fingerprints")
+def add_to_db( c, location, bssid, rssi, room):
+  c.execute("INSERT INTO " + location + " VALUES ?", (bssid, rssi, room))
 
-def get_bssid_prints( c, bssid ):
-  return c.execute('SELECT * FROM fingerprints WHERE BSSID = (?)', (bssid,))
+def get_prints( c, location ):
+  return c.execute("SELECT * FROM" + location)
 
-def in_db( c, bssid ):
+def get_bssid_prints( c, location, bssid ):
+  return c.execute('SELECT * FROM " + location " WHERE BSSID = (?)', (bssid,))
+
+def in_db( c, location, bssid ):
   print(bssid)
-  return c.execute('SELECT EXISTS(SELECT * FROM fingerprints WHERE BSSID = (?))', (bssid,))
+  return c.execute('SELECT EXISTS(SELECT * FROM ' + location + ' WHERE BSSID = (?))', (bssid,))
 
-def upd_db( c, bssid, rssi, location ):
-  bssid = "'" + bssid + "'"
-  rssi = "'" + str(rssi) + "'"
-  location = "'" + location + "'"
-  if ( in_db( c, bssid ) ):
-    c.execute('UPDATE fingerprints SET RSSI = (?), Location = (?) WHERE BSSID = (?)', (rssi, location, bssid,))
+def upd_db( c, location, bssid, rssi, room):
+  if ( len(in_db( c, location, bssid )) > 0 ):
+    print("BSSID already in DB. Updating values")
+    c.execute('UPDATE ' + location + ' SET RSSI = ' + str(rssi) + ', Floor = ' + room + ' WHERE BSSID = ' + bssid)
   else:
-    add_to_db( c, bssid, rssi, location )
+    print("BSSID not in DB. Adding entry")
+    add_to_db( c, bssid, rssi, room)
 
-def connect_fifo():
-    fifo.close()
-    exit()
+def create_table( c, location ):
+  location = '"' + location + '"'
+  c.execute("CREATE table " + location + " (`BSSID` TEXT UNIQUE, `RSSI` INTEGER, `Floor` TEXT, PRIMARY KEY(BSSID)) WHERE " + location + "NOT EXISTS (SELECT * FROM sqlite_master WHERE type='table'")
 
 def main():
   conn = sqlite3.connect('pi-fingerprints.db')
   c = conn.cursor()
   path="/home/pi/rssi-raspi/rssi"
-  ip = ["","",""]
+  ip = ""
   bssid = ["","",""]
   rssi = [0, 0, 0]
 
-  location = raw_input("Where is this(?)")
+  location = raw_input("Where is this(?)").lower()
+  location, floor = location.split()
+  create_table(c, location)
   counter = 0
   fifo = open(path, "r")
   while(True):
@@ -57,17 +61,17 @@ def main():
     index = counter / 10 - 1
     print("index: " + str(index))
     if (counter < 4):
-      if (len(ip[index]) != 0):
-        ip[index] = ip[index] + "." + line       
+      if (len(ip) != 0):
+        ip = ip + "." + line       
       else:
-        ip[index] = line
-      print("IP: " + ip[index])
+        ip = line
+      print("IP: " + ip)
     elif (counter == 34):
       print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))
       for i in range(3):
-        upd_db( c, bssid[i], rssi[i], location)
+        upd_db( c, location, bssid[i], rssi[i], floor)
       counter = 1
-      ip = ["","",line]
+      ip = line
       bssid = ["","",""]
       rssi = [0, 0, 0]
     elif (counter % 10 < 4):
@@ -76,9 +80,9 @@ def main():
       if (counter == 33):
         print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))
         for i in range(3):
-          upd_db( c, bssid[i], rssi[i], location)
+          upd_db( c, location, bssid[i], rssi[i], floor)
         counter = 1
-        ip = [line,"",""]
+        ip = line
         bssid = ["","",""]
         rssi = [0, 0, 0]
     elif (counter % 10 >= 4 and counter % 10 < 9): 
