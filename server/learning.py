@@ -38,7 +38,7 @@ def main():
       bssid = ["","",""]
       rssi = [0, 0, 0]
     elif (counter % 10 < 4):
-      rssi[index] = (rssi[index] << 4) | int(line)
+      rssi[index] = (rssi[index] << 8) | int(line)
       if (counter == 33):
         print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))
         for i in range(3):
@@ -48,7 +48,7 @@ def main():
         ip = "" 
         bssid = ["","",""]
         rssi = [0, 0, 0]
-    elif (counter % 10 >= 4 and counter % 10 < 9): 
+    elif (counter % 10 >= 4 and counter % 10 <= 9): 
       if (len(bssid[index]) != 0):
         bssid[index] = bssid[index] + ":" + line
       else: 
