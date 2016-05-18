@@ -1,7 +1,7 @@
 #!/bin/env python
 
 import os, sys
-from upd_database import *
+from db_functions import *
 
 def int32(x):
   if x>0xFFFFFFFF:
@@ -30,13 +30,15 @@ def main():
   fifo = open(path, "r")
   while(True):
     line = fifo.read()
-    if (len(line) == 0 or sys.getsizeof(line) > 4):
+    if (len(line) == 0 or len(line.encode("utf8")) > 4):
      continue
     index = counter / 10 - 1
     if (counter < 4):
       if (len(ip) != 0):
         ip = ip + "." + line       
       else:
+        if (line != "10"):
+          continue
         ip = line
     elif (counter == 34):
       print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))

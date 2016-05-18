@@ -1,7 +1,7 @@
 #!/bin/env python
 
 import os, sys
-from upd_database import *
+from db_functions import *
 
 def int32(x):
   if x>0xFFFFFFFF:
@@ -22,7 +22,7 @@ def main():
   bssid = ["","",""]
   rssi = [0, 0, 0]
 
-  location = raw_input("Where is this(?)").lower()
+  location = raw_input("Where is this?\n").lower()
   location, floor = location.split()
   create_table(c, location)
   conn.commit()
