@@ -3,6 +3,17 @@
 import os, sys
 from upd_database import *
 
+def int32(x):
+  if x>0xFFFFFFFF:
+    raise OverflowError
+  if x>0x7FFFFFFF:
+    x=int(0x100000000-x)
+    if x<2147483648:
+      return -x
+    else:
+      return -2147483648
+  return x
+
 def main():
   conn = sqlite3.connect('pi-fingerprints.db')
   c = conn.cursor()
@@ -39,6 +50,7 @@ def main():
       rssi = [0, 0, 0]
     elif (counter % 10 < 4):
       rssi[index] = (rssi[index] << 8) | int(line)
+      rssi[index] = int32(rssi[index])
       if (counter == 33):
         print("IP:" + str(ip) + "\tBSSID: " + str(bssid) + "\tRSSI: " + str(rssi))
         for i in range(3):
