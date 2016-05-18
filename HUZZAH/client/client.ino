@@ -25,7 +25,6 @@ uint8_t* bssid;
 uint8_t topBSSID[3][6];
 int32_t topRSSI[3];
 byte clientArray[34];
-int bssidFlag = 0;
 int32_t channel;
 bool isHidden;
 IPAddress ip;
@@ -35,9 +34,9 @@ const char* ssidMain = "RedRover";
 const char* password = "";
 
 // Server hostname and Port
-const char* host = "google.com";//"10.148.1.96";
+const char* host = "10.148.10.249";
 WiFiClient client;
-const int httpPort = 80;//10002;
+const int httpPort = 10101;
 
 /*
  * Setup the LED, connect to Wi-Fi, and get the IP address
@@ -169,47 +168,25 @@ void listNetworks() {
   }
 
   // Sort the Array for the top 3 routers' BSSID using insertion sort
-  // Do this one time only
-  if (!bssidFlag){
-    for (i = 1; i < numSsid; i++){
-      j = i;
-      while (j > 0 && arrayRSSI[j-1] < arrayRSSI[j]){
-        tmpRSSI = arrayRSSI[j-1];
-        tmpBSSID = arrayBSSID[j-1];
-        arrayRSSI[j-1] = arrayRSSI[j];
-        arrayBSSID[j-1] = arrayBSSID[j];
-        arrayRSSI[j] = tmpRSSI;
-        arrayBSSID[j] = tmpBSSID;
-        j = j-1;       
-      }
-    }
-
-    memcpy(topBSSID[0], arrayBSSID[0], 6);
-    memcpy(topBSSID[1], arrayBSSID[1], 6);
-    memcpy(topBSSID[2], arrayBSSID[2], 6);
-    
-    bssidFlag += 1;
-  }
-
-  // Find the top 3 BSSIDs' corresponding RSSI
-  for (i = 0; i < numSsid; i++){
-    if (memcmp(arrayBSSID[i], topBSSID[0], 6) == 0){
-      topRSSI[0] = arrayRSSI[i];
-    }
-    else if (memcmp(arrayBSSID[i], topBSSID[1], 6) == 0){
-      topRSSI[1] = arrayRSSI[i];      
-    }
-    else if (memcmp(arrayBSSID[i], topBSSID[2], 6) == 0) {
-      topRSSI[2] = arrayRSSI[i];
+  for (i = 1; i < numSsid; i++){
+    j = i;
+    while (j > 0 && arrayRSSI[j-1] < arrayRSSI[j]){
+      tmpRSSI = arrayRSSI[j-1];
+      tmpBSSID = arrayBSSID[j-1];
+      arrayRSSI[j-1] = arrayRSSI[j];
+      arrayBSSID[j-1] = arrayBSSID[j];
+      arrayRSSI[j] = tmpRSSI;
+      arrayBSSID[j] = tmpBSSID;
+      j = j-1;       
     }
   }
-  
-//  Serial.println("RSSI Array:");
-//  for (int thisNet = 0; thisNet < numSsid; thisNet++) {
-//    Serial.print(thisNet + String("->"));
-//    Serial.println(arrayRSSI[thisNet]);
-//  }
 
+  memcpy(topBSSID[0], arrayBSSID[0], 6);
+  topRSSI[0] = arrayRSSI[0];
+  memcpy(topBSSID[1], arrayBSSID[1], 6);
+  topRSSI[1] = arrayRSSI[1];
+  memcpy(topBSSID[2], arrayBSSID[2], 6);
+  topRSSI[2] = arrayRSSI[2];
 
   // Make the client array
   updateClientArray();
@@ -218,10 +195,10 @@ void listNetworks() {
   printClientArray();
   
   // Send the client array byte by byte
-//  for(i = 0; i < 34; i++){
-//    j = client.print(clientArray[i]);
-//    Serial.println(String("Sending ") + j);
-//  } 
+  for(i = 0; i < 34; i++){
+    j = client.print(clientArray[i]);
+    Serial.println(String("Sending ") + j);
+  } 
 }
 
 /*
