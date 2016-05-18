@@ -16,6 +16,11 @@ void error(const char *msg)
     exit(1);
 }
 
+void sigint_handler(int sig)
+{
+    printf(0, "Ahhh! SIGINT!\n", 14);
+}
+
 int main(int argc, char *argv[])
 {
      int sockfd, newsockfd;
@@ -24,6 +29,11 @@ int main(int argc, char *argv[])
      struct sockaddr_in serv_addr, cli_addr;
      int n;
      FILE *fifo;
+     struct sigaction sa;
+
+     sa.sa_handler = sigint_handler;
+     sa.sa_flags = 0; // or SA_RESTART
+     sigemptyset(&sa.sa_mask);
 
      sockfd = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -54,6 +64,13 @@ int main(int argc, char *argv[])
      while (1) {
        memset(buffer, 0, 256);
        n = read(newsockfd,buffer,255);
+
+       if (sigaction(SIGINT, &sa, NULL) == -1) {
+         close(newsockfd);
+         close(sockfd);
+         perror("sigaction");
+         exit(1);
+       }
 
        if (n < 0) {
          error("ERROR reading from socket");
