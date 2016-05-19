@@ -2,6 +2,7 @@
 
 import os, sys
 from db_functions import *
+import location_me
 
 def int32(x):
   if x>0xFFFFFFFF:
@@ -18,6 +19,7 @@ def int32(x):
 def main():
 
   LOC = BUILDING, FLOOR = ["", ""]
+  loc = [None, None, None]
 
   conn = sqlite3.connect('pi-fingerprints.db')
   c = conn.cursor()
@@ -47,8 +49,20 @@ def main():
         for l in range(len(perceived_loc)):
           if (len(perceived_loc[l]) != 0):
             LOC[l] = perceived_loc[l]
+        loc[i] = LOC
         BUILDING, FLOOR = LOC
         print(BUILDING + " " + FLOOR)
+      location_me.building = BUILDING
+      if (loc[0][1] == loc[1][1]):
+        if (len(loc) > 2):
+          if (loc[0][1] == loc[2][1]):
+            FLOOR = loc[0][1]
+          else:
+            FLOOR = loc[1][1]  
+        else:
+          FLOOR = loc[0][1]
+      location_me.floor = FLOOR
+      print("FINAL DECISION: " + location_me.building + " " + location_me.floor)
       counter = 0
       ip = line
       bssid = ["","",""]
@@ -64,8 +78,20 @@ def main():
           for l in range(len(perceived_loc)):
             if (len(perceived_loc[l]) != 0):
               LOC[l] = perceived_loc[l]
+          loc[i] = LOC
           BUILDING, FLOOR = LOC
           print(BUILDING + " " + FLOOR)
+        location_me.building = BUILDING
+        if (loc[0][1] == loc[1][1]):
+          if (len(loc) > 2):
+            if (loc[0][1] == loc[2][1]):
+              FLOOR = loc[0][1]
+            else:
+              FLOOR = loc[1][1]  
+          else:
+            FLOOR = loc[0][1]
+        location_me.floor = FLOOR
+        print("FINAL DECISION: " + location_me.building + " " + location_me.floor)
         counter = -1
         ip = "" 
         bssid = ["","",""]
@@ -75,6 +101,7 @@ def main():
         bssid[index] = bssid[index] + ":" + line
       else: 
         bssid[index] = line
+  
     counter = counter + 1
    
 
