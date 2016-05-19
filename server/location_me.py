@@ -1,5 +1,5 @@
 #!/usr/bin/env python
 
 
-building = "Philips"  
+building = "Phillips"  
 floor    = "2" 
