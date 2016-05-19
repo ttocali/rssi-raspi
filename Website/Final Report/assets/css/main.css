@@ -2798,8 +2798,8 @@
 	}
 
 	#header {
-		background: #444;
-		color: #bbb;
+		background: #1B96E3;
+		color: #B3DBF5;
 		cursor: default;
 		height: 3.25em;
 		left: 0;
@@ -3030,7 +3030,7 @@
 	#banner {
 		background-attachment: scroll,							fixed;
 		background-color: #666;
-		background-image: url("images/overlay.png"), url("../../images/banner.jpg");
+		background-image: url("images/overlay.png"), url("../../images/HuzzahOn.jpg");
 		background-position: top left,						center center;
 		background-repeat: repeat,							no-repeat;
 		background-size: auto,							cover;
