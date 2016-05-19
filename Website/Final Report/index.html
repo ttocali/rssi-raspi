@@ -30,10 +30,12 @@
 									<li>
 										<a href="#DTEST">Design and Testing</a>
 										<ul>
+											<li><a href="#BR">Background Research</a></li>
 											<li><a href="#OV">Overview</a></li>
 											<li><a href="#SS">Server-Side</a></li>
 											<li><a href="#CS">Client-Side</a></li>
 											<li><a href="#TEST">Testing</a></li>
+											<li><a href="#ISSUE">Issues</a></li>
 										</ul>
 									</li>
 									<li><a href="#RESULT">Results</a></li>
@@ -45,7 +47,6 @@
 								<a href="#APP" class="icon fa-angle-down">Appendix</a>
 								<ul>
 									<li><a href="#CODE">Code Listings</a></li>
-									<li><a href="#SCH">Schematics</a></li>
 									<li><a href="#BOM">Bill of Materials</a></li>
 									<li>
 										<a href="#REF">Resources</a>
@@ -83,65 +84,123 @@
 						<a name="OBJ"><header class="major"></a>
 							<h2>Objective</h2>
 						</header>
-						<!--<span class="image featured"><img src="images/pic01.jpg" alt="" /></span>-->
-						<p>Our objective was to design and implement indoor localization using the Pi. We decided to accomplish this through Wi-Fi by using the</p>
+						<p>
+							Our objective was to design and implement indoor localization with the Pi. We accomplished this goal through Wi-Fi using fingerprinting. Because universities have broad Wi-Fi networks, we decided that indoor localization would best be used to help users detect which floor and building their lost objects are in.
+						</p>
 						<a name="INTRO"><header class="major"></a>
 							<h2>Introduction</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
 						</header>
-						<p>Fill info in here</p>
+						<p>
+							Indoor Wi-Fi localization is a fascinating topic to research as there are so many different ways to implement it. Since the Raspberry Pi is a powerful computer, we believed that it would be a good tool to discover how to implement an indoor positioning system. Having a working indoor positioning system on campus would also be incredibly useful if we could apply it to locating easily lost items such as umbrellas, wallets, or keys. For our current goals, we chose to design a system that would be able to identify which building and floor the item is located in. This system would use a client-server model with the Raspberry Pi as the main server and Wi-Fi tags on the lost items as the clients. For the client-side, we used the Huzzah breakout board provided by Adafruit as the tag. For the server-side, we executed indoor localization with fingerprinting after researching and considering several different methods. As proof of concept, we have implemented a system that can only detect one lost item in Phillips Hall for now but we hope to be able to expand this system to be able to detect multiple lost items campus-wide.
+						</p>
 						<a name="DTEST"><header class="major"></a>
 							<h2>Design and Testing</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
 						</header>
+						<a name="BR"><h3>Background Research</h3></a>
+						<p>
+							Because there are so many ways to implement indoor localization through Wi-Fi, we took some time to research which method was most feasible for our purposes. Specifically, we investigated the methods of Wi-Fi trilateration, triangulation, distance-vector hop node localization and scene anaylsis for fingerprinting.	Written below are simple overviews of each of these localization methods. For more details on trilateration, triangular and scene analysis, refer to <a href="http://www.cs.ru.nl/D.Jansen/MartinVanDeGoorScriptie.pdf">Martin van de Goor's paper</a>. For more details on Distance-Vetor Hop Node localization, refer to <a href="http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6295757">Anil Agashe, Amrita Agashe, and Dr. Patil's paper</a>.
+							<h4><strong>Trilateration</strong></h4> 
+							For two dimensions, trilateration determines an object's position using the intersection of the object's distances from three access points in the same plane. With Wi-Fi, the distances can be calculated using the free-space path loss concept from physics. As discussed in <a href="http://rvmiller.com/2013/05/part-1-wifi-based-trilateration-on-android/">Ryan Miller's blog</a>, the free-space path loss is a relation between the distance and the RSSI (Received Signal Strength Indicator) and frequency of the signal from the access point as seen in the Equation 1. Note that the constant -27.55 depends on the units. For this equation, we are assuming that frequency is in MHz and distance is in meters.
+							<br><br><img src="images/FSPLequation.png" alt="" align="middle" /><strong><br>Equation 1: Free-Space Path Loss</strong><br><br>
+							Typically, the distances from the nodes are assumed to be circles for more accuracy, but can be done using squares as well for simpler computation.<br><br> 
+							<h4><strong>Triangulation</strong></h4>
+							Triangulation is similar to trilateration, but instead of requiring distances between the object and three nodes, it requires one known distance between two nodes and the angles between each of these nodes and the object. In Wi-Fi triangulation, the measurement of the angle can be determined with the angle of arrival (AoA) method. The AoA method requires that the nodes measure the difference in arrival times of a signal and also needs to know the geometry of the node array.<br><br>   
+							<h4><strong>Distance-Vector Hop Node Localization</strong></h4>
+							Also known more commonly as the DV-Hop, this algorithm returns the distance of unknown objects to known nodes by computing the product of the average hop distance and the hop count. Trilateration can then be used to estimate the position once three of these distances have been computed.<br><br>
+							<h4><strong>Main Drawback to These Methods</strong></h4>
+							The main drawback to the previous methods is that they all require knowing the physical location of the access points on campus. Interestingly enough, there actually are potential databases that we could use shown in the table borrowed from Wikipedia's <a href="https://en.wikipedia.org/wiki/Wi-Fi_positioning_system#Public_Wi-Fi_location_databases">Wi-Fi Positioning System</a> page.
+							<br><br><img src="images/DatabaseTable.JPG" alt="" align="middle" /><strong><br>Figure 1: Public Wi-Fi Location Databases</strong><br><br>
+							Unfortunately, none of these available databases allowed us to access the exact location of the access points. Instead, they were all blackbox APIs that returned an approximate locations, which were useful to determine the building the object is in but nothing more specific than that, which is why we ended up using the last method of scene analysis or fingerprinting as that was the most feasible. <br><br>
+							<h4><strong>Scene Analysis and Fingerprinting</strong></h4>
+							Scene analysis works 
+						</p>
 						<a name="OV"><h3>Overview</h3></a>
-						<p>stuff here</p>
+						<p>
+							The On-Campus Lost and Found works as a client-server model. Each easily lost item would be attached with a Wi-Fi tag (shown in Photo 1) that would act as the client by observing the networks around it and sending necessary data to the Pi server. 
+							<br><br><img src="images/HuzzahTag.jpg" width="500px" alt="" align="middle" /><strong><br>Photo 1: Wi-Fi Tag</strong><br><br>
+							As discussed in the previous section, the system has two states: a <strong>Learning</strong> state and a <strong>Tracking</strong> state. Both states follow the same model in Figure 2.
+							<br><br><img src="images/WiFiOverview1.png" alt="" align="middle" /><strong><br>Figure 2: Overview of On-Campus Lost and Found</strong>
+							<h4><strong>Learning</strong></h4>
+							Before the Pi can locate any lost item, it needs to map out the necessary buildings. In order to do this, the server has to be configured into the <strong>Learning</strong> state. The server will then ask the user for the building and floor. After answering this question, the user needs to walk around the desired floor with the tag. As they walk, the tag will send an array every two seconds of the IP address and the BSSIDs of the three networks around the tag with the strongest RSSI signals as well as the RSSI signals themselves. The server will then store this information in a database matching the combination of BSSIDs and RSSIs to a floor. This will need to be done for each building and each floor the user wishes to map.<br><br> 
+							<h4><strong>Tracking</strong></h4>
+							When the user is satisfed with their mapping, they can then start tracking their item. While the system is idle, the server would simply display a red button labeled "PANIC!" as the user supposedly hasn't lost their item yet. When the user has lost their item, though, they will then press the button in panic. Hopefully, their item is still on campus and if so, then the server will be able to locate the item and display the building and floor on the screen by querying the newly made database. Once the item has been relocated, the user can reply to the server that they have found the item by hitting the "I'm OK" button. This will return the server to the idle state again. These two server states can be seen in Photo 2.
+							<br><br><img src="images/ServerStates.JPG" alt="" align="middle" /><strong><br>Photo 2: Pi Server Before and After Item is Lost</strong>  
+						</p>
 						<a name="SS"><h3>Server-Side</h3></a>
 						<p>stuff here</p>
 						<a name="CS"><h3>Client-Side</h3></a>
-						<p>stuff here</p>	
+						<h4><strong>Hardware</strong></h4>
+						<p>
+							The tag we use to scan the surrounding networks is <a href="https://www.adafruit.com/product/2471">Adafruit's Huzzah breakout board</a>. As seen in the photo below (borrowed from the Adafruit website), it's about the size of a quarter, a good size to use for a tag.	
+							<br><br><img src="images/2471-13.jpg" alt="" width = "500px" align="middle" /><strong><br>Photo 3: Comparison of Huzzah Board to Quarter</strong><br><br>
+							After receiving the Huzzah, we soldered the headers onto the board. By accident, we soldered the programming header incorrectly. Instead of facing upwards from the board, we soldered it facing downwards similar to the other two headers. This made it impossible to put it into a breadboard unless the Huzzah was placed at the edge. This later turned to be a benefit, however, by reducing the height of the tag.<br><br>
+							Since this was a tag separate from the Pi, the Huzzah needed its own power supply.  For power sources, we were originally going to use coin batteries because they were small, light and cheap. However, we were afraid that the coin batteries would not be able to supply enough current to the Huzzah. According to <a href="https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/pinouts">Adafruit's tutorial</a>, the Huzzah needed a supply that provides at least 3.3V and 500mA of current, so we decided to buy a <a href="https://www.adafruit.com/products/1578">3.7 lithium ion polymer battery</a> that could supply up to 500mA. The reason we did not consider using a typical 6V AA battery pack is because they are too heavy and would have weighed the tag down compared to the much lighter lithium ion battery. An additional note about the lithium ion battery is that they can be recharged and reused as long as you have the corresponding <a href="https://www.adafruit.com/products/1904">charger</a>.<br><br> 
+							To keep the tag portable, we bought the <a href="https://www.adafruit.com/products/1608">smallest perfboard available</a> (1/4 size). On the front side of the board, we soldered two 10-pin female-to-male headers to attach the Huzzah to the board, a SPDT switch to control the power supply, a 2-pin male header to connect the battery to the board, and wires to connect the power supply to their respective pins on the Huzzah (mainly the VBat and GND pins). We used headers to connect the Huzzah to the perfboard instead of directly soldering the Huzzah to the board so that the Huzzah would be easy to replace in the case that we accidentally killed the chip. On the back side of the board, we put velcro so that the battery can be easily attached. We also inserted wires into one of the mounting holes of the perfboard and molded them into a key ring as a possible idea on how to attach the tag onto an item. The final product turned out to be a portable tag with a size of 1.7" x 2.0" x 0.9" that can easily be turned on and off as seen in the following photos. 
+							<br><br><img src="images/HuzzahBothSides.jpg" alt="" width = "800px" align="middle" /><strong><br>Photo 4: Huzzah Tag Front and Back Sides</strong>  
+						</p>
+						<h4><strong>Software</strong></h4>
+						<p>
+							There are two main methods to program the Huzzah: NodeMCU Lua and the Arduino IDE. Due to familiarity and simplicity of use, we programmed the Huzzah with a <a href="https://www.adafruit.com/product/954">USB to TTL Serial Cable</a> and the <a href="https://www.arduino.cc/en/Main/Software">Arduino IDE</a>. The client code written for this project is attached in the <strong><i>Code Listings</i></strong> section of the Appendix as <strong><i>Client.ino</i></strong>.<br><br>
+							As mentioned earlier, the tag needs to be able to send an array containing its current IP address and the BSSIDs of the top three routers and their corresponding RSSIs to the server every 2 seconds. Convieniently, the Huzzah is an ESP8266 chip and therefore comes with the ESP8266WiFi library, which includes many functions needed for this project. In particular, we found the <strong>WiFi.scanNetworks()</strong> and <strong>WiFi.getNetworkInfo()</strong> functions to be useful.<br><br>
+							During initialization, the Huzzah will boot up and first connect to the university's main network. In our case, we connect the tag to Cornell University's RedRover Network as it is one of the largest open networks on Cornell. Once connected, it will then connect to the server and then obtain and store its current IP address into the client array. It will also setup an LED to blink every 30 seconds. The purpose of the LED is to check on the battery life. If the power supply is below 3.3V, the Huzzah won't function correctly and so the LED will fail to flash.<br><br>
+							After everything is set up, the Huzzah will proceed to enter a loop. It scans the networks using <strong>WiFi.scanNetworks</strong> to record the number of discovered networks. Then, it will get various information through the <strong>WiFi.getNetworkInfo()</strong> function about each network namely the SSID, encryption type, RSSI, BSSID, channel, and whether the network is hidden or not. For this project, we are mainly concerned about the BSSIDs and RSSIs and so we store these values into two large arrays containing the BSSIDs and RSSIs of all the networks. While this program runs, the Huzzah needs to be able to identify the three networks with the strongest signals. When scanning the networks, though, the returned list of networks may not necesarily be in any specific order. Thus, we perform an insertion sort (as we are not too concerned about speed in the program) to sort all the RSSIs and their corresponding BSSIDs in order from strongest to weakest signal to record the top three BSSIDs. After the top three networks are found, the Huzzah stores these BSSIDs and RSSIs into the large client array as seen in Figure 2 and then sends this array to the Pi server.
+							<br><br><img src="images/ClientArrayFormat.png" alt="" align="middle" /><strong><br>Figure 2: Format of Client Array (34 bytes total)</strong>   
+						</p>	 
 						<a name="TEST"><h3>Testing</h3></a>
-						<p>stuff here</p>					
+						<p>
+							Testing the project initially was straightforward. As this was a software-heavy project, we mainly printed variables to the screen to debug the code. Note that on the Huzzah side, these prints must be commented out once debugging is completed. If not, the Huzzah program will not run when unplugged from the computer because it won't be able to connect to the serial monitor.<br><br> 
+							Testing the actual implementation was more complex. Before the Pi can track anything, it had to learn a building first. For verification purposes, we used floors on Gates and Phillips Hall. Since there were some server-client communication issues, one person would roam the floor with the Huzzah. On the other side, the second person would keep an eye out on the command line to ensure that no communication errors happened between the Huzzah and the Pi. If a problem did arise, the second person would contact the first person by phone to let them know that they can stop. Communications between the Huzzah and Pi would then be reset so that the first person can continue their fingerprinting quest. Similarly, for tracking, one person would be walking around with the Huzzah while the second person would be at the server. The server would print the determined location of the Huzzah. We could easily verify whether the system was working then by seeing if the determined location matched the actual location.
+						</p>
+						<a name="ISSUE"><h3>Issues</h3></a>
+						<p>
+							While we were working on this project, we did encounter several mysterious issues dealing with the Pi and Huzzah. Sadly, we were not able to diagnose the cause nor come up with a fix for most of these issues.<br><br>
+							One of the main issues was when our first Pi had mysteriously died. This occured after we had  We diagnosed the source as the Pi by referring to elinux's <a href="http://elinux.org/R-Pi_Troubleshooting">R-Pi_Troubleshooting</a> page. For this Pi, the Power LED didn't light up when the Pi was plugged in. When we obtained a second Pi, though, this Pi turned out to be faulty as well, because even though the Power LED was on this time, the ACT LED did not flash as it was supposed to show SD card interaction and instead remained on after the Pi booted. <br><br> 
+							The only issue we encountered and were able to solve was pinging the Pi. We found that this was a known issue and could easily be fixed by running the <i>sudo chmod u+s /bin/ping</i> command.
+						</p>	
 						<a name="RESULT"><header class="major"></a>
 							<h2>Results</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
 						</header>
 						<p>Fill info in here</p>
 						<a name="CONC"><header class="major"></a>
 							<h2>Conclusions</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
 						</header>
 						<p>Fill info in here</p>
 						<a name="FWORK"><header class="major"></a>
 							<h2>Future Work</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
 						</header>
-						<p>Fill info in here</p>
+						<p>
+							There is a lot of potential work that could be done to expand this project into a useful tool if we were given more time to work on this project. Currently, the Pi can only locate one lost static object. Unfortunately, when people lose objects, they are often moved by others to new locations. Thus, if the lost object is currently being moved from one place to another when the user is trying to detect their object, the tag won't be able to send the correct information to the server.
+						</p>
 					</section>
 
 					<section class="box special">
 						<a name="APP"><header class="major"></a>
-							<h2>Appendix</h2>
-							<p>Blandit varius ut praesent nascetur eu penatibus nisi risus faucibus nunc ornare<br />
-							adipiscing nunc adipiscing. Condimentum turpis massa.</p>
+							<h2>Appendix</h2><hr>
 						</header>
 						<!--<span class="image featured"><img src="images/pic01.jpg" alt="" /></span>-->
-						<h3>Code Listings</h3>
-						<p>hello there</p>
-						<h3>Schematics</h3>
-						<h3>Bill of Materials</h3>
+						<a name="CODE"><h3>Code Listings</h3></a>
+						<p>
+							<strong>Server-Side</strong><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/server.c">server.c</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/db_functions.py">db_functions.py</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/learning.py">learning.py</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/tracking.py">tracking.py</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/gui.py">gui.py</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/location_me.py">location_me.py</a><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/Buttons.py">Buttons.py</a>
+						</p>
+						<p>
+							<strong>Client-Side</strong><br>
+							<a href="https://github.com/ttocali/rssi-raspi/blob/master/HUZZAH/client/client.ino">client.ino</a>
+						</p>
+						<a name="BOM"><h3>Bill of Materials</h3></a>
 						<style type="text/css">
 						.tg  {border-collapse:collapse;border-spacing:0;}
 						.tg td{font-family:Arial, sans-serif;font-size:14px;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;}
 						.tg th{font-family:Arial, sans-serif;font-size:14px;font-weight:normal;padding:10px 5px;border-style:solid;border-width:1px;overflow:hidden;word-break:normal;}
-						.tg .tg-ih28{font-weight:bold;font-size:18px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;background-color:#bbdaff;vertical-align:top}
-						.tg .tg-ump5{font-size:18px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;vertical-align:top}
-						.tg .tg-77m9{font-size:18px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;background-color:#bbdaff;vertical-align:top}
+						.tg .tg-ih28{font-weight:bold;font-size:16px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;background-color:#bbdaff;vertical-align:top}
+						.tg .tg-ump5{font-size:16px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;vertical-align:top}
+						.tg .tg-77m9{font-size:16px;font-family:"Lucida Sans Unicode", "Lucida Grande", sans-serif !important;;background-color:#bbdaff;vertical-align:top}
 						</style>
 						<table class="tg">
 						  <tr>
@@ -156,6 +215,14 @@
 						    <td class="tg-ump5">Huzzah</td>
 						    <td class="tg-ump5">Adafruit</td>
 						    <td class="tg-ump5">2471</td>
+						    <td class="tg-ump5">$9.95</td>
+						    <td class="tg-ump5">1</td>
+						    <td class="tg-ump5">$9.95</td>
+						  </tr>
+						  <tr>
+						    <td class="tg-ump5">USB to TTL Serial Cable</td>
+						    <td class="tg-ump5">Adafruit</td>
+						    <td class="tg-ump5">954</td>
 						    <td class="tg-ump5">$9.95</td>
 						    <td class="tg-ump5">1</td>
 						    <td class="tg-ump5">$9.95</td>
@@ -190,7 +257,7 @@
 						    <td class="tg-77m9"></td>
 						    <td class="tg-77m9"></td>
 						    <td class="tg-77m9"></td>
-						    <td class="tg-ih28">$27.80</td>
+						    <td class="tg-ih28">$37.75</td>
 						  </tr>
 						</table>
 					</section>
@@ -201,16 +268,25 @@
 								<span class="icon major fa-floppy-o accent2"></span>
 								<a name="REF"><h3>Server References</h3></a>
 								<p>
-									<a href="http://rvmiller.com/2013/05/part-1-wifi-based-trilateration-on-android/">Wi-Fi-based Trilateration on Android</a>
+									<a href="http://www.linuxhowtos.org/C_C++/socket.htm">Sockets Tutorial</a><br>
+									<a href="http://www.cs.ru.nl/D.Jansen/MartinVanDeGoorScriptie.pdf">Indoor Localization in Wireless Sensor Networks</a><br>
+									<a href="http://rvmiller.com/2013/05/part-1-wifi-based-trilateration-on-android/">Wi-Fi Trilateration on Android</a><br>
+									<a href="http://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=6295757">DV-Hop Localization Algorithm</a><br>
+									<a href="https://en.wikipedia.org/wiki/Wi-Fi_positioning_system#Public_Wi-Fi_location_databases">Public Wi-Fi Location Databases</a><br>
+									<a href="https://developer.android.com/training/location/receive-location-updates.html">Receiving Location Updates</a><br>
+									<a href="http://www.neotitans.com/resources/python/python-unsigned-32bit-value.html">Converting Python Integers into Signed 32-bit Equivalents</a><br>
+									<a href="https://www.raspberrypi.org/forums/viewtopic.php?f=91&t=128458&p=859002">Ping Issue on Raspberry Pi</a><br>
+									<a href="http://elinux.org/R-Pi_Troubleshooting">Raspberry Pi LED Definitions</a>
 								</p>
 							</section>
 							<section>
 								<span class="icon major fa-files-o accent3"></span>
 								<a name="DATA"><h3>Client References</h3></a>
 								<p>
-									<a href="https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/overview">Huzzah Breakout Board Tutorial</a>
-									<br>
-									<a href="https://www.arduino.cc/en/Reference/WiFi">Arduino Wi-Fi Library</a>
+									<a href="https://learn.adafruit.com/adafruit-huzzah-esp8266-breakout/overview">Huzzah Breakout Board Tutorial</a><br>
+									<a href="https://www.arduino.cc/en/Reference/WiFi">Arduino Wi-Fi Library</a><br>
+									<a href="https://www.arduino.cc/en/Tutorial/ScanNetworks">Arduino ScanNetworks Example</a>
+									<a href="https://www.arduino.cc/en/Main/Software">Arduino IDE</a>
 								</p>
 							</section>
 						</div>
@@ -218,7 +294,7 @@
 							<section>
 								<span class="icon major fa-truck accent4"></span>
 								<a name="VEND"><h3>Vendor Sites</h3></a>
-								<p><a href="https://www.adafruit.com/">adafruit</a></p>
+								<p><a href="https://www.adafruit.com/">Adafruit</a></p>
 							</section>
 							<section>
 								<span class="icon major fa-group accent5"></span>
@@ -236,7 +312,10 @@
 							<section class="box special">
 								<span class="image featured"><img src="images/860107_10151298041051169_468712386_o.jpg" alt="" /></span>
 								<a name="CH"><h3>Christine Hwang (ch458)</h3></a>
-								<p>For this project, Christine Hwang worked on the Huzzah board design and assembly, the software on the client-side, and the organization of the website.
+								<p>
+									&#8226; Huzzah board design and assembly<br>
+									&#8226; Software - Client-Side<br>
+									&#8226; Website Organization
 								</p>
 							</section>
 
@@ -244,9 +323,13 @@
 						<div class="6u 12u(narrower)">
 
 							<section class="box special">
-								<span class="image featured"><img src="images/WP_20140517_004.jpg" alt="" /></span>
+								<span class="image featured"><img src="images/12376866_770815203018216_5419212314433199246_n.jpg" alt="" /></span>
 								<a name="TT"><h3>Tania Tocalini (tvt9)</h3></a>
-								<p>Integer volutpat ante et accumsan commophasellus sed aliquam feugiat lorem aliquet ut enim rutrum phasellus iaculis accumsan dolore magna aliquam veroeros.</p>
+								<p>
+									&#8226; Background Research<br>
+									&#8226; Aesthetic Opinion<br>
+									&#8226; Software - Server-Side
+								</p>
 							</section>
 
 						</div>
@@ -257,12 +340,7 @@
 			<!-- Footer -->
 				<footer id="footer">
 					<ul class="icons">
-						<li><a href="#" class="icon fa-twitter"><span class="label">Twitter</span></a></li>
-						<li><a href="#" class="icon fa-facebook"><span class="label">Facebook</span></a></li>
-						<li><a href="#" class="icon fa-instagram"><span class="label">Instagram</span></a></li>
-						<li><a href="#" class="icon fa-github"><span class="label">Github</span></a></li>
-						<li><a href="#" class="icon fa-dribbble"><span class="label">Dribbble</span></a></li>
-						<li><a href="#" class="icon fa-google-plus"><span class="label">Google+</span></a></li>
+						<li><a href="https://github.com/ttocali/rssi-raspi" class="icon fa-github"><span class="label">Github</span></a></li>
 					</ul>
 					<ul class="copyright">
 						<li>&copy; Untitled. All rights reserved.</li><li>Design: <a href="http://html5up.net">HTML5 UP</a></li>
