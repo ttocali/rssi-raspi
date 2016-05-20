@@ -108,9 +108,12 @@
 							<h4><strong>Distance-Vector Hop Node Localization</strong></h4>
 							Also known more commonly as the DV-Hop, this algorithm returns the distance of unknown objects to known nodes by computing the product of the average hop distance and the hop count. Trilateration can then be used to estimate the position once three of these distances have been computed.<br><br>
 							<h4><strong>Main Drawback to These Methods</strong></h4>
-							The main drawback to the previous methods is that they all require knowing the physical location of the access points on campus. Interestingly enough, there actually are potential databases that we could use shown in the table borrowed from Wikipedia's <a href="https://en.wikipedia.org/wiki/Wi-Fi_positioning_system#Public_Wi-Fi_location_databases">Wi-Fi Positioning System</a> page.
-							<br><br><img src="images/DatabaseTable.JPG" alt="" align="middle" /><strong><br>Figure 1: Public Wi-Fi Location Databases</strong><br><br>
-							Unfortunately, none of these available databases allowed us to access the exact location of the access points. Instead, they were all blackbox APIs that returned an approximate locations, which were useful to determine the building the object is in but nothing more specific than that, which is why we ended up using the last method of scene analysis or fingerprinting as that was the most feasible. <br><br>
+							The main drawback to the previous methods is that they all require knowing the physical location of the access points on campus. Interestingly enough, there actually are potential databases that we could use to find the location of a router  shown in the table borrowed from Wikipedia's <a href="https://en.wikipedia.org/wiki/Wi-Fi_positioning_system#Public_Wi-Fi_location_databases">Wi-Fi Positioning System</a> page.
+							<br><br>
+							<div class="image">
+							<img src="images/DatabaseTable.JPG" alt="" align="middle" /><strong><br>Figure 1: Public Wi-Fi Location Databases</strong>
+							</div><br><br>
+							Unfortunately, none of these available databases allowed us to access the exact location of the access points. Instead, they were all blackbox APIs that returned an approximate locations, which were useful to determine the building the object is in but nothing more specific than that, which is why we ended up using the last method of scene analysis or fingerprinting as that was the most feasible. Note, only some of the databases were viable because their API allowed us to look up locations based on BSSIDs we collect from the access points.  <br><br>
 							<h4><strong>Scene Analysis and Fingerprinting</strong></h4>
 							Scene analysis works 
 						</p>
@@ -121,13 +124,27 @@
 							As discussed in the previous section, the system has two states: a <strong>Learning</strong> state and a <strong>Tracking</strong> state. Both states follow the same model in Figure 2.
 							<br><br><img src="images/WiFiOverview1.png" alt="" align="middle" /><strong><br>Figure 2: Overview of On-Campus Lost and Found</strong>
 							<h4><strong>Learning</strong></h4>
-							Before the Pi can locate any lost item, it needs to map out the necessary buildings. In order to do this, the server has to be configured into the <strong>Learning</strong> state. The server will then ask the user for the building and floor. After answering this question, the user needs to walk around the desired floor with the tag. As they walk, the tag will send an array every two seconds of the IP address and the BSSIDs of the three networks around the tag with the strongest RSSI signals as well as the RSSI signals themselves. The server will then store this information in a database matching the combination of BSSIDs and RSSIs to a floor. This will need to be done for each building and each floor the user wishes to map.<br><br> 
+							Before the Pi can locate any lost item, it needs to map out the necessary buildings. In order to do this, the server has to be configured into the <strong>Learning</strong> state. The server will then ask the user for the building and floor. After answering this question, the user needs to walk around the desired floor with the tag. As they walk, the tag will send an array every two seconds of the IP address of the Huzzah and the BSSIDs of the three networks around the tag with the strongest RSSI signals as well as the RSSI signals themselves. The server will then store this information in a database matching the combination of BSSIDs and RSSIs to a floor. This will need to be done for each building and each floor the user wishes to map.<br><br> 
 							<h4><strong>Tracking</strong></h4>
 							When the user is satisfed with their mapping, they can then start tracking their item. While the system is idle, the server would simply display a red button labeled "PANIC!" as the user supposedly hasn't lost their item yet. When the user has lost their item, though, they will then press the button in panic. Hopefully, their item is still on campus and if so, then the server will be able to locate the item and display the building and floor on the screen by querying the newly made database. Once the item has been relocated, the user can reply to the server that they have found the item by hitting the "I'm OK" button. This will return the server to the idle state again. These two server states can be seen in Photo 2.
 							<br><br><img src="images/ServerStates.JPG" alt="" align="middle" /><strong><br>Photo 2: Pi Server Before and After Item is Lost</strong>  
 						</p>
 						<a name="SS"><h3>Server-Side</h3></a>
-						<p>stuff here</p>
+						<p> There are 4 main components on the server-side for this system: communication layer, fingerprint database, graphical user interface, and modes of operation, i.e. learning and tracking. 
+						</p>
+						<p>
+					 	In the communication layer, we currently have a simple socket connection server, hosted on the Raspberry Pi. It expects communication following UDP protocol. We chose UDP over TCP because we had planned on having fast continuous communication between the server and client. Assuming the item has been lost and isn't moving, we don't need to know every single snapshot of data. As long as we receive semi-frequent data, the server is able to approximately locate the client. We can afford to trade off reliability of data and connection for speed and simple design. We discovered that on public WiFi networks, such as RedRover, we are able to piggyback the network and bypass registration to still use the WiFi for socket communications with our server. We did nothing extra to make this happen. It simply worked once we set up a socket communication. Note, if you try to access web pages without registration, you won't get the contents of the web page, but instead a message asking the user to register. 
+						</p>
+						<p>
+						The most critical portion of this system is the fingerprint database. We use a database to keep track of router WiFi access points within a mapped area. During the learning phase, we collect BSSID and the associated RSSI, building name, and floor number. The database then creates a table for each mapped building. BSSIDs are assumed to be a unique entry for each table, so we use this fact to quickly find information about any access point. For each entry we keep the average of encountered RSSI signal strength for a floor and the number of times we have encountered this WiFi access point. Keeping the average helps to stabilize our information for each access points by eliminating outliers caused by an obstacle-free line of sight for a signal. We currently keep track of the number of times we encounter an access point, but don't use this information in our analysis. The plan for the future was to design a finer grain algorithm that would be based on a combination of RSSI, number of times encountered, and locations of analysis. We also keep track of the floor for each BSSID. The floor number is determined by the RSSI. The floor with the highest RSSI is the one that wins and is put into the database. Note, this does not imply that the router is actually on that floor. It simply means that if we were to receive a signal from that WiFi point again, we're most likely to be on the stored floor. Overall, our "fingerprint" consists of a BSSID with the associated RSSI, number of times seen, and floor number. Fingerprints are aggregated per building in our database. This was written and maintained using sqlite. 
+						</p>
+						<p>
+						As shown in a previous section, we designed a graphical user interface for tracking an item. The interface is designed to display the location of the item, whenever the user chooses to see the location. Otherwise, the GUI is idle and doesn't display any useful information. 
+						</p>
+						<p>
+						Our backend has three modes of operation: learning, tracking, and idle. Both learning and tracking were described in previous sections. Both operations are executed separately from the server. The server can then be on and running no matter the mode of operation. We use a fifo between the server and the operations to communicate data from the server to the algorithms. The learning script may update the database based on the data passed on from the server. The tracking script will under no circumstances update the database. It simply takes the BSSID passed on from the server and queries the database to get the corresponding building and floor.
+						</p>
+
 						<a name="CS"><h3>Client-Side</h3></a>
 						<h4><strong>Hardware</strong></h4>
 						<p>
@@ -154,7 +171,7 @@
 						<a name="ISSUE"><h3>Issues</h3></a>
 						<p>
 							While we were working on this project, we did encounter several mysterious issues dealing with the Pi and Huzzah. Sadly, we were not able to diagnose the cause nor come up with a fix for most of these issues.<br><br>
-							One of the main issues was when our first Pi had mysteriously died. This occured after we had plugged it into one of the walls in Stateler For troubleshooting the Pi, we referred to elinux's <a href="http://elinux.org/R-Pi_Troubleshooting">R-Pi_Troubleshooting</a> page. The Power LED didn't light up for this Pi after plugging it into Statler and when we attempted to communicate with the Pi through the FTDI cable, the computer claimed that there was the Pi required too much power that the USB port couldn't provide. We suspect that the Pi may have died after a power surge in Statler, but are unsure if that is the true source.<br><br>
+							One of the main issues was when our first Pi had mysteriously died. This occured after we had plugged it into one of the walls in Statler For troubleshooting the Pi, we referred to elinux's <a href="http://elinux.org/R-Pi_Troubleshooting">R-Pi_Troubleshooting</a> page. The Power LED didn't light up for this Pi after plugging it into Statler and when we attempted to communicate with the Pi through the FTDI cable, the computer claimed that there was the Pi required too much power that the USB port couldn't provide. We suspect that the Pi may have died after a power surge in Statler, but are unsure if that is the true source.<br><br>
 							Hence, we obtained a second Pi, but this Pi turned out to be faulty as well. Even though the Power LED lit up this time, the ACT LED did not flash as it was supposed to show SD card interaction and instead remained on after the Pi booted. The piTFT display also remained lit up and never booted. We isolated the problem as the Pi itself. To eliminate other possible causes, we plugged it into the monitor to remove the piTFT screen and we input in a SD card that had worked on another Pi, but this Pi still did not boot up. As this Pi was a new Pi, we believe that the Pi may have been defective right out of the box.<br><br>
 							Now that we had two Pis dead, we found that our touchscreen had completely died as well. Actually, the touchscreen had been a constant issue before this project. In a working system, <i>/dev/input/touchscreen</i> would be mapped to <i>event2</i>. Ours, though, had a tendency to map to <i>rfkill</i>. This issue used to be alleviated by running a Bash script in the <strong>.profile</strong> that would ensure that <i>/dev/input/touchscreen</i> was mapped to <i>event2</i>, but this script stopped working as the Pi would display that the only thing <i>/dev/input/touchscreen</i> would map to was <i>rfkill</i>. Even after we obtained a new piTFT screen, we were unable to fix the problem. We speculate that the cause may be somewhere in the configuration stored on the SD card, but were unable to fix it in time to make our touchscreen GUI work for the demo.<br><br>
 							Another bug that we had was miscommunication between the Pi and Huzzah. When the Huzzah is turned on, we expected that it would automatically connect with the server if the server is online but it doesn't. Instead, we needed to leave the Huzzah on, close and reopen the server, and reset the Huzzah to restore communications. It is still unknown whether this issue is due to the server or due to the client.<br><br>
@@ -179,8 +196,8 @@
 						<p>
 							There is a lot of potential work that could be done to expand this project into a useful tool that could really be used on campus if we were given more time to work on this project. These involve fixing the current bugs, looking into better alternatives for tags, and expanding this into a full blown project by mapping out all campus buildings and rooms.<br><br>
 							First and foremost would be more work to debug our current project into a robust system. Basically, we need to diagnose and resolve the previous bugs of the server-client miscommunication, nonfunctional touchscreen, and global variables between multiple Python modules. These bugs must be fixed before we can move along with the project.<br><br>
-							Earlier, we discussed that the Huzzah also sends the IP address along with the BSSIDs and RSSI signals. This is because we were originally going to use the IP address and the BSSIDs to access the public Wi-Fi location databases through APIs and obtain a latitude and longitude. Combined with our database of fingerprints, we would be able to reveal to the user exactly where their item is in respect to the server's position as demonstrated in the following figure.
-							<br><br><img src="images/html_screenshot.png" width="750px" alt="" align="middle" /><strong><br>Figure 6: Item Location on Building Map</strong><br><br>
+							Earlier, we discussed that the Huzzah also sends the IP address along with the BSSIDs and RSSI signals. This is because we were originally going to use the IP address and the BSSIDs to access the public Wi-Fi location databases through APIs and obtain a latitude and longitude. The latitude and longitude could be used to find the building an item was in, which we would use to pull up a map. With a finer graned localization algorithm, we could then reveal to the user exactly where their item is in a map of the building.
+							<br><br><img src="images/philips.jpg" width="750px" alt="" align="middle" /><strong><br>Figure 6: Building Map for Phillips and Duffield</strong><br><br>
 							At this point, we have created a decent working system. Price-wise, though, it is still a bit high as each tag is about twenty one dollars (Huzzah, perfboard, and battery). Researching online, we should look into testing and using the <a href="http://www.gearbest.com/transmitters-receivers-module/pp_227650.html?wid=8">ESP8266 ESP-12 Wi-Fi Serial Module</a> in place of the Huzzah. For this project, we only needed to be able to use a chip that can utilize the ESP8266WiFi Arduino library. The Huzzah can do this, but it also comes along with unnecessary GPIO and a much higher price compared to the more cost-effective and smaller Wi-Fi serial module. Because the Wi-Fi serial module is smaller, we can also look into designing smaller PCBs and researching power sources other than the Li-Ion battery to see if we can make our tag more portable and affordable.<br><br>
 							Assuming that the new WiFi serial modules work, the project would be at a more affordable budget, which means that we could start considering expanding the system to work with multiple lost items. This requires additional work to make the system multi-threaded so that it can connect to multiple tags instead of one tag only. Having multiple tags would also require that we improve on server interaction with the user. Before the server can start tracking, the user would need to register with the server which objects are attached to the tags. Then, in <strong>Tracking</strong> mode, the server will still diplay the PANIC! button, but after the user has hit the button, the GUI will ask the user to identify which item was lost before displaying that specific item's location.<br><br>
 							Finally, we would be in a good place to scale our project to work on the entire campus when we get multiple object location functioning. To conclude our project, we would pass several tags to various friends to learn and expand the server's database so that it can track any object anywhere on campus.
@@ -192,6 +209,7 @@
 							<h2>Appendix</h2><hr>
 						</header>
 						<a name="CODE"><h3>Code Listings</h3></a>
+						<div><div style="float:left;width: 50%">
 						<p>
 							<strong>Server-Side</strong><br>
 							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/server.c">server.c</a><br>
@@ -202,10 +220,14 @@
 							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/location_me.py">location_me.py</a><br>
 							<a href="https://github.com/ttocali/rssi-raspi/blob/master/server/Buttons.py">Buttons.py</a>
 						</p>
+						</div>
+						<div style="float:right;width: 50%">
 						<p>
 							<strong>Client-Side</strong><br>
 							<a href="https://github.com/ttocali/rssi-raspi/blob/master/HUZZAH/client/client.ino">client.ino</a>
 						</p>
+						</div></div>
+						<div style="clear:both">
 						<a name="BOM"><h3>Bill of Materials</h3></a>
 						<style type="text/css">
 						.tg  {border-collapse:collapse;border-spacing:0;}
@@ -273,6 +295,7 @@
 						    <td class="tg-ih28">$37.75</td>
 						  </tr>
 						</table>
+						</div>
 					</section>
 
 					<section class="box special features">
