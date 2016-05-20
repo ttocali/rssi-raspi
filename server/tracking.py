@@ -1,4 +1,17 @@
 #!/bin/env python
+##############################################################
+# Authors: Christine Hwang (ch458) and Tania Tocalini (tvt9)
+# Date:    5-18-2016
+# Project: Lost and Found
+# Summary: Script written to implement the tracking phase of the
+#          system. This communicates with the server through
+#          a fifo file and queries the database with the    
+#          observed BSSID to get a location. Once a location 
+#          has been determined the GUI is updated through 
+#          shared modulees variables. The location is found for 
+#          each received BSSID and then a vote occurs where the 
+#          majority wins and this becomes the determined location
+################################################################
 
 import os, sys
 from db_functions import *

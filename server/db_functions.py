@@ -1,13 +1,11 @@
-#
+#!/bin/env python
 ##############################################################
 # Authors: Christine Hwang (ch458) and Tania Tocalini (tvt9)
-# Date:    3-3-2016
-# Lab:     Lab 1
-# Summary: Commands on the command line control video playback
-#          on mplayer
+# Date:    5-18-2016
+# Project: Lost and Found
+# Summary: Functions written to update, modify, and query the 
+#          fingerprint database
 ################################################################
-
-#!/bin/env python
 
 import sqlite3
 

@@ -1,5 +1,9 @@
-/* A simple server in the internet domain using TCP
-   The port number is passed as an argument */
+//##############################################################
+//# Authors: Christine Hwang (ch458) and Tania Tocalini (tvt9)
+//# Date:    5-18-2016
+//# Project: Lost and Found
+//# Summary: This is a simple server created using sockets.       
+//################################################################
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
