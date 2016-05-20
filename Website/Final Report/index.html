@@ -185,8 +185,9 @@
 						<a name="RESULT"><header class="major"></a>
 							<h2>Results</h2>
 						</header>
-						<p>Fill info in here</p>
-						<a name="CONC"><header class="major"></a>
+						<p> Our expectations at the beginning of this project was to design a system that would be relative to the position of the Raspberry Pi. After doing some research, we discovered that this is impossible (at the moment) to achieve without having some knowledge of the locations of routers or specific expensive hardware to measure the location. We switched over to a different system altogether that relies on building a collection of fingerprints of known routers and associated locations and then using that information to find the area a tag is in. This system is not easily scalable because it has a learning phase that maps places which involves going to the physical location and walking around with our tag to collect fingerprints. Additionally, maintaining an accurate database of fingerprints is difficult. Fingerprints can become stale if a router moves position or a new wall is built. New routers can be added to an area that we won't have a fingerprint to.  We did succeed in accurately determining the difference between floors in a building. This was measured in Duffield between floors 2, 3, and 4. We discovered that the moment a user with the tag stepped onto floor 3 from floor 2, our server would immediately display Floor 3 as the location. Furthermore, while wandering on the floor our server always displayed the correct floor. This sometimes depended on how fast the person holding the tag walked. Our communications between the server and Huzzah ran at 50Hz, so the Huzzah sent data over to the server every 2 seconds. 2 seconds is too slow to accurately and immediately determine location for a moving target. We were unable to test faster frequency for communication. Otherwise, we would have chosen the fastest frequency that still functionally operated well.   
+						</p>
+						<a name="CONC"><header class="major"></a> 
 							<h2>Conclusions</h2>
 						</header>
 						<p>Fill info in here</p>
